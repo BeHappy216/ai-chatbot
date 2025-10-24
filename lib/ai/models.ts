@@ -1,4 +1,4 @@
-export const DEFAULT_CHAT_MODEL: string = "chat-model";
+export const DEFAULT_CHAT_MODEL: string = "chat-model-1";
 
 export type ChatModel = {
   id: string;
@@ -8,14 +8,13 @@ export type ChatModel = {
 
 export const chatModels: ChatModel[] = [
   {
-    id: "chat-model",
-    name: "Grok Vision",
-    description: "Advanced multimodal model with vision and text capabilities",
+    id: "chat-model-1",
+    name: "聊天模型 1", // 根据您的实际模型命名
+    description: "主要聊天模型,适合复杂对话",
   },
   {
-    id: "chat-model-reasoning",
-    name: "Grok Reasoning",
-    description:
-      "Uses advanced chain-of-thought reasoning for complex problems",
+    id: "chat-model-2",
+    name: "聊天模型 2", // 根据您的实际模型命名
+    description: "快速响应模型,适合简单对话",
   },
 ];
