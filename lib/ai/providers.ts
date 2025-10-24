@@ -1,26 +1,30 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { customProvider } from "ai";
 import { isTestEnvironment } from "../constants";
 
-// 创建4个独立的OpenAI客户端实例
-const chatModel1Client = createOpenAI({
-  baseURL: process.env.CHAT_MODEL_1_BASE_URL,
-  apiKey: process.env.CHAT_MODEL_1_API_KEY,
+// 创建4个独立的OpenAI兼容客户端实例
+const chatModel1Client = createOpenAICompatible({
+  name: "chat-model-1",
+  baseURL: process.env.CHAT_MODEL_1_BASE_URL || "",
+  apiKey: process.env.CHAT_MODEL_1_API_KEY || "",
 });
 
-const chatModel2Client = createOpenAI({
-  baseURL: process.env.CHAT_MODEL_2_BASE_URL,
-  apiKey: process.env.CHAT_MODEL_2_API_KEY,
+const chatModel2Client = createOpenAICompatible({
+  name: "chat-model-2",
+  baseURL: process.env.CHAT_MODEL_2_BASE_URL || "",
+  apiKey: process.env.CHAT_MODEL_2_API_KEY || "",
 });
 
-const titleModelClient = createOpenAI({
-  baseURL: process.env.TITLE_MODEL_BASE_URL,
-  apiKey: process.env.TITLE_MODEL_API_KEY,
+const titleModelClient = createOpenAICompatible({
+  name: "title-model",
+  baseURL: process.env.TITLE_MODEL_BASE_URL || "",
+  apiKey: process.env.TITLE_MODEL_API_KEY || "",
 });
 
-const artifactModelClient = createOpenAI({
-  baseURL: process.env.ARTIFACT_MODEL_BASE_URL,
-  apiKey: process.env.ARTIFACT_MODEL_API_KEY,
+const artifactModelClient = createOpenAICompatible({
+  name: "artifact-model",
+  baseURL: process.env.ARTIFACT_MODEL_BASE_URL || "",
+  apiKey: process.env.ARTIFACT_MODEL_API_KEY || "",
 });
 
 export const myProvider = isTestEnvironment
@@ -42,33 +46,22 @@ export const myProvider = isTestEnvironment
     })()
   : customProvider({
       languageModels: {
-        // 主聊天模型1
-        "chat-model-1": chatModel1Client(
+        "chat-model-1": chatModel1Client.chatModel(
           process.env.CHAT_MODEL_1_NAME || "gpt-4"
         ),
-
-        // 主聊天模型2
-        "chat-model-2": chatModel2Client(
+        "chat-model-2": chatModel2Client.chatModel(
           process.env.CHAT_MODEL_2_NAME || "gpt-3.5-turbo"
         ),
-
-        // 默认聊天模型(指向模型1)
-        "chat-model": chatModel1Client(
+        "chat-model": chatModel1Client.chatModel(
           process.env.CHAT_MODEL_1_NAME || "gpt-4"
         ),
-
-        // 推理模型(可选,如果不需要可以指向模型1或2)
-        "chat-model-reasoning": chatModel2Client(
+        "chat-model-reasoning": chatModel2Client.chatModel(
           process.env.CHAT_MODEL_2_NAME || "gpt-4"
         ),
-
-        // 标题生成模型
-        "title-model": titleModelClient(
+        "title-model": titleModelClient.chatModel(
           process.env.TITLE_MODEL_NAME || "gpt-3.5-turbo"
         ),
-
-        // Artifact生成模型
-        "artifact-model": artifactModelClient(
+        "artifact-model": artifactModelClient.chatModel(
           process.env.ARTIFACT_MODEL_NAME || "gpt-4"
         ),
       },
