@@ -239,6 +239,7 @@ function PureMultimodalInput({
         uploadQueue.length === 0 && (
           <SuggestedActions
             chatId={chatId}
+            selectedModelId={selectedModelId}
             selectedVisibilityType={selectedVisibilityType}
             sendMessage={sendMessage}
           />
