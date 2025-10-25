@@ -66,7 +66,7 @@ export default function Page() {
               className="font-semibold text-gray-800 hover:underline dark:text-zinc-200"
               href="/register"
             >
-              免费注册
+              注册
             </Link>
           </p>
         </AuthForm>

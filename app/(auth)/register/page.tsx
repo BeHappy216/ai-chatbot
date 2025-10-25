@@ -26,13 +26,13 @@ export default function Page() {
 
   useEffect(() => {
     if (state.status === "user_exists") {
-      toast({ type: "error", description: "账户已存在！" });
+      toast({ type: "error", description: "账户已存在" });
     } else if (state.status === "failed") {
-      toast({ type: "error", description: "创建账户失败！" });
+      toast({ type: "error", description: "创建账户失败" });
     } else if (state.status === "invalid_data") {
       toast({
         type: "error",
-        description: "验证您的提交失败！",
+        description: "您的提交验证失败",
       });
     } else if (state.status === "success") {
       toast({ type: "success", description: "账户创建成功！" });
@@ -53,22 +53,22 @@ export default function Page() {
     <div className="flex h-dvh w-screen items-start justify-center bg-background pt-12 md:items-center md:pt-0">
       <div className="flex w-full max-w-md flex-col gap-12 overflow-hidden rounded-2xl">
         <div className="flex flex-col items-center justify-center gap-2 px-4 text-center sm:px-16">
-          <h3 className="font-semibold text-xl dark:text-zinc-50">Sign Up</h3>
+          <h3 className="font-semibold text-xl dark:text-zinc-50">注册</h3>
           <p className="text-gray-500 text-sm dark:text-zinc-400">
-            Create an account with your email and password
+            使用您的电子邮件和密码创建账户
           </p>
         </div>
         <AuthForm action={handleSubmit} defaultEmail={email}>
-          <SubmitButton isSuccessful={isSuccessful}>Sign Up</SubmitButton>
+          <SubmitButton isSuccessful={isSuccessful}>注册</SubmitButton>
           <p className="mt-4 text-center text-gray-600 text-sm dark:text-zinc-400">
-            {"Already have an account? "}
+            {"已有账户？请直接"}
             <Link
               className="font-semibold text-gray-800 hover:underline dark:text-zinc-200"
               href="/login"
             >
-              Sign in
+              登录
             </Link>
-            {" instead."}
+            {" 。"}
           </p>
         </AuthForm>
       </div>
