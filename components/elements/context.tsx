@@ -140,23 +140,23 @@ export const Context = ({ className, usage, ...props }: ContextProps) => {
             {usage?.cachedInputTokens && usage.cachedInputTokens > 0 && (
               <InfoRow
                 costText={usage?.costUSD?.cacheReadUSD?.toString()}
-                label="Cache Hits"
+                label="缓存命中"
                 tokens={usage?.cachedInputTokens}
               />
             )}
             <InfoRow
               costText={usage?.costUSD?.inputUSD?.toString()}
-              label="Input"
+              label="输入"
               tokens={usage?.inputTokens}
             />
             <InfoRow
               costText={usage?.costUSD?.outputUSD?.toString()}
-              label="Output"
+              label="输出"
               tokens={usage?.outputTokens}
             />
             <InfoRow
               costText={usage?.costUSD?.reasoningUSD?.toString()}
-              label="Reasoning"
+              label="推理"
               tokens={
                 usage?.reasoningTokens && usage.reasoningTokens > 0
                   ? usage.reasoningTokens
@@ -167,7 +167,7 @@ export const Context = ({ className, usage, ...props }: ContextProps) => {
               <>
                 <Separator className="mt-1" />
                 <div className="flex items-center justify-between pt-1 text-xs">
-                  <span className="text-muted-foreground">Total cost</span>
+                  <span className="text-muted-foreground">全部花费</span>
                   <div className="flex items-center gap-2 font-mono">
                     <span className="min-w-[4ch] text-right" />
                     <span>

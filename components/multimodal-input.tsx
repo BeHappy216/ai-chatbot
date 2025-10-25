@@ -191,7 +191,7 @@ function PureMultimodalInput({
       const { error } = await response.json();
       toast.error(error);
     } catch (_error) {
-      toast.error("Failed to upload file, please try again!");
+      toast.error("上传文件失败，请重试！");
     }
   }, []);
 
@@ -258,7 +258,7 @@ function PureMultimodalInput({
         onSubmit={(event) => {
           event.preventDefault();
           if (status !== "ready") {
-            toast.error("Please wait for the model to finish its response!");
+            toast.error("请等待模型完成响应！");
           } else {
             submitForm();
           }
@@ -306,7 +306,7 @@ function PureMultimodalInput({
             maxHeight={200}
             minHeight={44}
             onChange={handleInput}
-            placeholder="Send a message..."
+            placeholder="发送消息..."
             ref={textareaRef}
             rows={1}
             value={input}
@@ -375,13 +375,15 @@ function PureAttachmentsButton({
   status: UseChatHelpers<ChatMessage>["status"];
   selectedModelId: string;
 }) {
-  const isReasoningModel = selectedModelId === "chat-model-reasoning";
+  const selectedModel = chatModels.find(
+    (model) => model.id === selectedModelId
+  );
 
   return (
     <Button
       className="aspect-square h-8 rounded-lg p-1 transition-colors hover:bg-accent"
       data-testid="attachments-button"
-      disabled={status !== "ready" || isReasoningModel}
+      disabled={status !== "ready" || !selectedModel?.multimodal}
       onClick={(event) => {
         event.preventDefault();
         fileInputRef.current?.click();

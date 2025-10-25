@@ -104,7 +104,7 @@ const PureChatItem = ({
             onSelect={() => onDelete(chat.id)}
           >
             <TrashIcon />
-            <span>Delete</span>
+            <span>删除</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

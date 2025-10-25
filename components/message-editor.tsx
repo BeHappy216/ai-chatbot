@@ -71,7 +71,7 @@ export function MessageEditor({
           }}
           variant="outline"
         >
-          Cancel
+          取消
         </Button>
         <Button
           className="h-fit px-3 py-2"

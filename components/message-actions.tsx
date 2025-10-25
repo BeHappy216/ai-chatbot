@@ -36,12 +36,12 @@ export function PureMessageActions({
 
   const handleCopy = async () => {
     if (!textFromParts) {
-      toast.error("There's no text to copy!");
+      toast.error("没有文字可以复制");
       return;
     }
 
     await copyToClipboard(textFromParts);
-    toast.success("Copied to clipboard!");
+    toast.success("已复制到粘贴板");
   };
 
   // User messages get edit (on hover) and copy actions
@@ -53,12 +53,12 @@ export function PureMessageActions({
             <Action
               className="-left-10 absolute top-0 opacity-0 transition-opacity group-hover/message:opacity-100"
               onClick={() => setMode("edit")}
-              tooltip="Edit"
+              tooltip="编辑"
             >
               <PencilEditIcon />
             </Action>
           )}
-          <Action onClick={handleCopy} tooltip="Copy">
+          <Action onClick={handleCopy} tooltip="复制">
             <CopyIcon />
           </Action>
         </div>
@@ -68,7 +68,7 @@ export function PureMessageActions({
 
   return (
     <Actions className="-ml-0.5">
-      <Action onClick={handleCopy} tooltip="Copy">
+      <Action onClick={handleCopy} tooltip="复制">
         <CopyIcon />
       </Action>
 
@@ -86,7 +86,7 @@ export function PureMessageActions({
           });
 
           toast.promise(upvote, {
-            loading: "Upvoting Response...",
+            loading: "正在点赞...",
             success: () => {
               mutate<Vote[]>(
                 `/api/vote?chatId=${chatId}`,
@@ -111,12 +111,12 @@ export function PureMessageActions({
                 { revalidate: false }
               );
 
-              return "Upvoted Response!";
+              return "已点赞！";
             },
-            error: "Failed to upvote response.",
+            error: "点赞失败。",
           });
         }}
-        tooltip="Upvote Response"
+        tooltip="赞"
       >
         <ThumbUpIcon />
       </Action>
@@ -135,7 +135,7 @@ export function PureMessageActions({
           });
 
           toast.promise(downvote, {
-            loading: "Downvoting Response...",
+            loading: "正在点踩...",
             success: () => {
               mutate<Vote[]>(
                 `/api/vote?chatId=${chatId}`,
@@ -160,12 +160,12 @@ export function PureMessageActions({
                 { revalidate: false }
               );
 
-              return "Downvoted Response!";
+              return "已点踩！";
             },
-            error: "Failed to downvote response.",
+            error: "点踩失败。",
           });
         }}
-        tooltip="Downvote Response"
+        tooltip="踩"
       >
         <ThumbDownIcon />
       </Action>
