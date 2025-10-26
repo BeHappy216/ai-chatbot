@@ -11,8 +11,8 @@ export type ChatModel = {
 export const chatModels: ChatModel[] = [
   {
     id: "chat-model-1",
-    name: "聊天模型 1",
-    description: "主要聊天模型,适合复杂对话",
+    name: "小书童",
+    description: "对讲集提问",
     multimodal: true,
     suggestions: [
       "什么是四念住？",
@@ -23,8 +23,8 @@ export const chatModels: ChatModel[] = [
   },
   {
     id: "chat-model-2",
-    name: "聊天模型 2",
-    description: "快速响应模型,适合简单对话",
+    name: "AI朱老师",
+    description: "用文集训练的大语言模型",
     multimodal: false,
     suggestions: [
       "如何提高工作效率？",
