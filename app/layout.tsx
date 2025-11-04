@@ -64,6 +64,14 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link
+          href="https://npm.onmicrosoft.cn/noto-sans-cjk-sc@1.3.0/css/regular.css"
+          rel="stylesheet"
+        />
+        <link
+          href="https://npm.onmicrosoft.cn/noto-sans-cjk-sc@1.3.0/css/bold.css"
+          rel="stylesheet"
+        />
         <script
           // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
           dangerouslySetInnerHTML={{
