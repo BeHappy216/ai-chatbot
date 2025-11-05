@@ -65,11 +65,11 @@ export default function RootLayout({
     >
       <head>
         <link
-          href="https://npm.onmicrosoft.cn/noto-sans-cjk-sc@1.3.0/css/regular.css"
+          href="https://jsdelivr.topthink.com/npm/noto-sans-cjk-sc@1.3.0/css/regular.css"
           rel="stylesheet"
         />
         <link
-          href="https://npm.onmicrosoft.cn/noto-sans-cjk-sc@1.3.0/css/bold.css"
+          href="https://jsdelivr.topthink.com/npm/noto-sans-cjk-sc@1.3.0/css/bold.css"
           rel="stylesheet"
         />
         <script
