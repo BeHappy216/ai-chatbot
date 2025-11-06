@@ -1,4 +1,4 @@
-export const DEFAULT_CHAT_MODEL: string = "chat-model-1";
+export const DEFAULT_CHAT_MODEL: string = "dify_nosystem";
 
 export type ChatModel = {
   id: string;
@@ -10,7 +10,7 @@ export type ChatModel = {
 
 export const chatModels: ChatModel[] = [
   {
-    id: "chat-model-1",
+    id: "dify_nosystem",
     name: "小书童",
     description: "对讲集提问",
     multimodal: true,

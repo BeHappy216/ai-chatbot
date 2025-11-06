@@ -3,10 +3,10 @@ import { customProvider } from "ai";
 import { isTestEnvironment } from "../constants";
 
 // 创建4个独立的OpenAI兼容客户端实例
-const chatModel1Client = createOpenAICompatible({
-  name: "chat-model-1",
-  baseURL: process.env.CHAT_MODEL_1_BASE_URL || "",
-  apiKey: process.env.CHAT_MODEL_1_API_KEY || "",
+const difyNosystemClient = createOpenAICompatible({
+  name: "dify_nosystem",
+  baseURL: process.env.DIFY_NOSYSTEM_BASE_URL || "",
+  apiKey: process.env.DIFY_NOSYSTEM_API_KEY || "",
 });
 
 const chatModel2Client = createOpenAICompatible({
@@ -46,14 +46,11 @@ export const myProvider = isTestEnvironment
     })()
   : customProvider({
       languageModels: {
-        "chat-model-1": chatModel1Client.chatModel(
-          process.env.CHAT_MODEL_1_NAME || "gpt-4"
+        dify_nosystem: difyNosystemClient.chatModel(
+          process.env.DIFY_NOSYSTEM_NAME || "gpt-4"
         ),
         "chat-model-2": chatModel2Client.chatModel(
           process.env.CHAT_MODEL_2_NAME || "gpt-3.5-turbo"
-        ),
-        "chat-model": chatModel1Client.chatModel(
-          process.env.CHAT_MODEL_1_NAME || "gpt-4"
         ),
         "chat-model-reasoning": chatModel2Client.chatModel(
           process.env.CHAT_MODEL_2_NAME || "gpt-4"
