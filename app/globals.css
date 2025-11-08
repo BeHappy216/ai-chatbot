@@ -89,9 +89,9 @@
 
 /* define theme */
 @theme {
-  --font-sans:
-    var(--font-geist), "Noto Sans CJK SC", "PingFang SC", "Microsoft YaHei",
-    "Microsoft YaHei UI", "WenQuanYi Micro Hei", sans-serif;
+  /* var(--font-geist), */ --font-sans:
+    "OPPO Sans 4.0", "PingFang SC", "Microsoft YaHei", "Microsoft YaHei UI",
+    "WenQuanYi Micro Hei", sans-serif;
   --font-mono: var(--font-geist-mono);
 
   --breakpoint-toast-mobile: 600px;

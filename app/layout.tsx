@@ -64,14 +64,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <link
-          href="https://jsdelivr.topthink.com/npm/noto-sans-cjk-sc@1.3.0/css/regular.css"
-          rel="stylesheet"
-        />
-        <link
-          href="https://jsdelivr.topthink.com/npm/noto-sans-cjk-sc@1.3.0/css/bold.css"
-          rel="stylesheet"
-        />
+        <link href="/oppo-sans-4/css/opposans4.css" rel="stylesheet" />
         <script
           // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
           dangerouslySetInnerHTML={{
