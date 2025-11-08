@@ -8,7 +8,10 @@ import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
 import { PlusIcon, TrashIcon } from "@/components/icons";
-import { SidebarHistory, getChatHistoryPaginationKey } from "@/components/sidebar-history";
+import {
+  getChatHistoryPaginationKey,
+  SidebarHistory,
+} from "@/components/sidebar-history";
 import { SidebarUserNav } from "@/components/sidebar-user-nav";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +22,6 @@ import {
   SidebarMenu,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
@@ -48,15 +51,15 @@ export function AppSidebar({ user }: { user: User | undefined }) {
         mutate(unstable_serialize(getChatHistoryPaginationKey));
         router.push("/");
         setShowDeleteAllDialog(false);
-        return "All chats deleted successfully";
+        return "所有对话已成功删除";
       },
-      error: "Failed to delete all chats",
+      error: "删除所有对话失败",
     });
   };
 
   return (
     <>
-      <Sidebar className="group-data-[side=left]:border-r-0">
+      <Sidebar className="group-data-[side=left]:border-r-0" variant="inset">
         <SidebarHeader>
           <SidebarMenu>
             <div className="flex flex-row items-center justify-between">
@@ -68,7 +71,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                 }}
               >
                 <span className="cursor-pointer rounded-md px-2 font-semibold text-lg hover:bg-muted">
-                  Chatbot
+                  解脱道禅修
                 </span>
               </Link>
               <div className="flex flex-row gap-1">
@@ -85,7 +88,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent align="end" className="hidden md:block">
-                      Delete All Chats
+                      清空所有对话记录
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -105,7 +108,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent align="end" className="hidden md:block">
-                    New Chat
+                    新开对话
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -118,19 +121,21 @@ export function AppSidebar({ user }: { user: User | undefined }) {
         <SidebarFooter>{user && <SidebarUserNav user={user} />}</SidebarFooter>
       </Sidebar>
 
-      <AlertDialog onOpenChange={setShowDeleteAllDialog} open={showDeleteAllDialog}>
+      <AlertDialog
+        onOpenChange={setShowDeleteAllDialog}
+        open={showDeleteAllDialog}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete all chats?</AlertDialogTitle>
+            <AlertDialogTitle>删除所有对话记录?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete all your
-              chats and remove them from our servers.
+              此操作无法撤销。这将永久删除您的对话记录并将其从服务器中删除。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>取消</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteAll}>
-              Delete All
+              全部删除
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

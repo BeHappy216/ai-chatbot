@@ -22,8 +22,7 @@ export const postRequestBodySchema = z.object({
     parts: z.array(partSchema),
   }),
   selectedChatModel: z.enum([
-    "chat-model",
-    "chat-model-1",
+    "dify_nosystem",
     "chat-model-2",
     "chat-model-reasoning",
   ]),

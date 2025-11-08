@@ -32,6 +32,7 @@ export const chat = pgTable("Chat", {
     .notNull()
     .default("private"),
   lastContext: jsonb("lastContext").$type<AppUsage | null>(),
+  difyConversationId: text("difyConversationId"),
 });
 
 export type Chat = InferSelectModel<typeof chat>;

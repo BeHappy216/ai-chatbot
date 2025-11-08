@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "katex/dist/katex.min.css";
 
 /* include utility classes in streamdown */
 @source '../node_modules/streamdown/dist/index.js';
@@ -88,7 +89,9 @@
 
 /* define theme */
 @theme {
-  --font-sans: var(--font-geist);
+  /* var(--font-geist), */ --font-sans:
+    "OPPO Sans 4.0", "PingFang SC", "Microsoft YaHei", "Microsoft YaHei UI",
+    "WenQuanYi Micro Hei", sans-serif;
   --font-mono: var(--font-geist-mono);
 
   --breakpoint-toast-mobile: 600px;

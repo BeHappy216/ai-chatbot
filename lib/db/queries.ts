@@ -134,7 +134,7 @@ export async function deleteAllChatsByUserId({ userId }: { userId: string }) {
       return { deletedCount: 0 };
     }
 
-    const chatIds = userChats.map(c => c.id);
+    const chatIds = userChats.map((c) => c.id);
 
     await db.delete(vote).where(inArray(vote.chatId, chatIds));
     await db.delete(message).where(inArray(message.chatId, chatIds));
@@ -425,7 +425,7 @@ export async function getSuggestionsByDocumentId({
     return await db
       .select()
       .from(suggestion)
-      .where(and(eq(suggestion.documentId, documentId)));
+      .where(eq(suggestion.documentId, documentId));
   } catch (_error) {
     throw new ChatSDKError(
       "bad_request:database",
@@ -485,7 +485,7 @@ export async function deleteMessagesByChatIdAfterTimestamp({
   }
 }
 
-export async function updateChatVisiblityById({
+export async function updateChatVisibilityById({
   chatId,
   visibility,
 }: {
@@ -517,6 +517,24 @@ export async function updateChatLastContextById({
       .where(eq(chat.id, chatId));
   } catch (error) {
     console.warn("Failed to update lastContext for chat", chatId, error);
+    return;
+  }
+}
+
+export async function updateDifyConversationId({
+  chatId,
+  difyConversationId,
+}: {
+  chatId: string;
+  difyConversationId: string;
+}) {
+  try {
+    return await db
+      .update(chat)
+      .set({ difyConversationId })
+      .where(eq(chat.id, chatId));
+  } catch (error) {
+    console.warn("Failed to update difyConversationId for chat", chatId, error);
     return;
   }
 }

@@ -36,7 +36,9 @@ import {
   saveChat,
   saveMessages,
   updateChatLastContextById,
+  updateDifyConversationId,
 } from "@/lib/db/queries";
+import type { DBMessage } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
@@ -44,7 +46,7 @@ import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 let globalStreamContext: ResumableStreamContext | null = null;
 
@@ -125,11 +127,14 @@ export async function POST(request: Request) {
     }
 
     const chat = await getChatById({ id });
+    let messagesFromDb: DBMessage[] = [];
 
     if (chat) {
       if (chat.userId !== session.user.id) {
         return new ChatSDKError("forbidden:chat").toResponse();
       }
+      // Only fetch messages if chat already exists
+      messagesFromDb = await getMessagesByChatId({ id });
     } else {
       const title = await generateTitleFromUserMessage({
         message,
@@ -141,9 +146,9 @@ export async function POST(request: Request) {
         title,
         visibility: selectedVisibilityType,
       });
+      // New chat - no need to fetch messages, it's empty
     }
 
-    const messagesFromDb = await getMessagesByChatId({ id });
     const uiMessages = [...convertToUIMessages(messagesFromDb), message];
 
     const { longitude, latitude, city, country } = geolocation(request);
@@ -175,8 +180,18 @@ export async function POST(request: Request) {
 
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
+        const headers: Record<string, string> = {};
+        if (selectedChatModel === "dify_nosystem" && chat?.difyConversationId) {
+          headers["chat-id"] = chat.difyConversationId;
+        }
+        // Dify requires a user ID
+        if (selectedChatModel === "dify_nosystem") {
+          headers["user-id"] = session.user.id;
+        }
+
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
+          headers,
           system: systemPrompt({ selectedChatModel, requestHints }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
@@ -203,7 +218,22 @@ export async function POST(request: Request) {
             isEnabled: isProductionEnvironment,
             functionId: "stream-text",
           },
-          onFinish: async ({ usage }) => {
+          onFinish: async ({ usage, providerMetadata }) => {
+            // Save Dify conversation ID if it's a new chat
+            if (
+              selectedChatModel === "dify_nosystem" &&
+              providerMetadata?.difyWorkflowData?.conversationId &&
+              typeof providerMetadata.difyWorkflowData.conversationId ===
+                "string" &&
+              !chat?.difyConversationId
+            ) {
+              await updateDifyConversationId({
+                chatId: id,
+                difyConversationId:
+                  providerMetadata.difyWorkflowData.conversationId,
+              });
+            }
+
             try {
               const providers = await getTokenlensCatalog();
               const modelId =
@@ -274,15 +304,15 @@ export async function POST(request: Request) {
       },
     });
 
-    // const streamContext = getStreamContext();
+    const streamContext = getStreamContext();
 
-    // if (streamContext) {
-    //   return new Response(
-    //     await streamContext.resumableStream(streamId, () =>
-    //       stream.pipeThrough(new JsonToSseTransformStream())
-    //     )
-    //   );
-    // }
+    if (streamContext) {
+      return new Response(
+        await streamContext.resumableStream(streamId, () =>
+          stream.pipeThrough(new JsonToSseTransformStream())
+        )
+      );
+    }
 
     return new Response(stream.pipeThrough(new JsonToSseTransformStream()));
   } catch (error) {

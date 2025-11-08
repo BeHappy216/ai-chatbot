@@ -8,8 +8,8 @@ import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://chat.vercel.ai"),
-  title: "Next.js Chatbot Template",
-  description: "Next.js chatbot template using the AI SDK.",
+  title: "解脱道小书童",
+  description: "用大语言模型帮助学习解脱道讲集",
 };
 
 export const viewport = {
@@ -64,6 +64,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link href="/oppo-sans-4/css/opposans4.css" rel="stylesheet" />
         <script
           // biome-ignore lint/security/noDangerouslySetInnerHtml: "Required"
           dangerouslySetInnerHTML={{

@@ -1,13 +1,9 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { customProvider } from "ai";
 import { isTestEnvironment } from "../constants";
+import { difyLanguageModel } from "./dify";
 
-// 创建4个独立的OpenAI兼容客户端实例
-const chatModel1Client = createOpenAICompatible({
-  name: "chat-model-1",
-  baseURL: process.env.CHAT_MODEL_1_BASE_URL || "",
-  apiKey: process.env.CHAT_MODEL_1_API_KEY || "",
-});
+// 创建独立的OpenAI兼容客户端实例
 
 const chatModel2Client = createOpenAICompatible({
   name: "chat-model-2",
@@ -46,14 +42,9 @@ export const myProvider = isTestEnvironment
     })()
   : customProvider({
       languageModels: {
-        "chat-model-1": chatModel1Client.chatModel(
-          process.env.CHAT_MODEL_1_NAME || "gpt-4"
-        ),
+        ...(difyLanguageModel && { dify_nosystem: difyLanguageModel }),
         "chat-model-2": chatModel2Client.chatModel(
           process.env.CHAT_MODEL_2_NAME || "gpt-3.5-turbo"
-        ),
-        "chat-model": chatModel1Client.chatModel(
-          process.env.CHAT_MODEL_1_NAME || "gpt-4"
         ),
         "chat-model-reasoning": chatModel2Client.chatModel(
           process.env.CHAT_MODEL_2_NAME || "gpt-4"

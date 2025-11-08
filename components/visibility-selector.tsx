@@ -27,14 +27,14 @@ const visibilities: Array<{
 }> = [
   {
     id: "private",
-    label: "Private",
-    description: "Only you can access this chat",
+    label: "私密",
+    description: "此页对话仅自己可见",
     icon: <LockIcon />,
   },
   {
     id: "public",
-    label: "Public",
-    description: "Anyone with the link can access this chat",
+    label: "公开",
+    description: "此页对话可由链接公开分享",
     icon: <GlobeIcon />,
   },
 ];
@@ -69,7 +69,7 @@ export function VisibilitySelector({
         )}
       >
         <Button
-          className="hidden h-8 focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 md:flex md:h-fit md:px-2"
+          className="hidden h-8 md:flex md:h-fit md:px-2"
           data-testid="visibility-selector"
           variant="outline"
         >
