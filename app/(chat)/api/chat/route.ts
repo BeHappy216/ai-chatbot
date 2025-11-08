@@ -36,6 +36,7 @@ import {
   saveChat,
   saveMessages,
   updateChatLastContextById,
+  updateDifyConversationId,
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
@@ -179,8 +180,18 @@ export async function POST(request: Request) {
 
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
+        const headers: Record<string, string> = {};
+        if (selectedChatModel === "dify_nosystem" && chat?.difyConversationId) {
+          headers["chat-id"] = chat.difyConversationId;
+        }
+        // Dify requires a user ID
+        if (selectedChatModel === "dify_nosystem") {
+          headers["user-id"] = session.user.id;
+        }
+
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
+          headers,
           system: systemPrompt({ selectedChatModel, requestHints }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
@@ -207,7 +218,22 @@ export async function POST(request: Request) {
             isEnabled: isProductionEnvironment,
             functionId: "stream-text",
           },
-          onFinish: async ({ usage }) => {
+          onFinish: async ({ usage, providerMetadata }) => {
+            // Save Dify conversation ID if it's a new chat
+            if (
+              selectedChatModel === "dify_nosystem" &&
+              providerMetadata?.difyWorkflowData?.conversationId &&
+              typeof providerMetadata.difyWorkflowData.conversationId ===
+                "string" &&
+              !chat?.difyConversationId
+            ) {
+              await updateDifyConversationId({
+                chatId: id,
+                difyConversationId:
+                  providerMetadata.difyWorkflowData.conversationId,
+              });
+            }
+
             try {
               const providers = await getTokenlensCatalog();
               const modelId =
