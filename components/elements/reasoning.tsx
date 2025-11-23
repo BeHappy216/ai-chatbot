@@ -130,7 +130,7 @@ export const ReasoningTrigger = memo(
             {isStreaming || duration === 0 ? (
               <p>思考中...</p>
             ) : (
-              <p>Thought for {duration}s</p>
+              <p>已思考 {duration}s</p>
             )}
             <ChevronDownIcon
               className={cn(

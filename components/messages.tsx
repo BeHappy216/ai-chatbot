@@ -69,30 +69,42 @@ function PureMessages({
         <ConversationContent className="flex flex-col gap-4 px-2 py-4 md:gap-6 md:px-4">
           {messages.length === 0 && <Greeting />}
 
-          {messages.map((message, index) => (
-            <PreviewMessage
-              chatId={chatId}
-              isLoading={
-                status === "streaming" && messages.length - 1 === index
-              }
-              isReadonly={isReadonly}
-              key={message.id}
-              message={message}
-              regenerate={regenerate}
-              requiresScrollPadding={
-                hasSentMessage && index === messages.length - 1
-              }
-              setMessages={setMessages}
-              vote={
-                votes
-                  ? votes.find((vote) => vote.messageId === message.id)
-                  : undefined
-              }
-            />
-          ))}
+          {messages.map((message, index) => {
+            const isLast = index === messages.length - 1;
+            const isStreaming = status === "streaming";
+            const isAssistant = message.role === "assistant";
+            const isEmpty = message.parts?.length === 0;
+
+            if (isStreaming && isLast && isAssistant && isEmpty) {
+              return null;
+            }
+
+            return (
+              <PreviewMessage
+                chatId={chatId}
+                isLoading={isStreaming && isLast}
+                isReadonly={isReadonly}
+                key={message.id}
+                message={message}
+                regenerate={regenerate}
+                requiresScrollPadding={hasSentMessage && isLast}
+                setMessages={setMessages}
+                vote={
+                  votes
+                    ? votes.find((vote) => vote.messageId === message.id)
+                    : undefined
+                }
+              />
+            );
+          })}
 
           <AnimatePresence mode="wait">
-            {status === "submitted" && <ThinkingMessage key="thinking" />}
+            {(status === "submitted" ||
+              (status === "streaming" &&
+                messages[messages.length - 1]?.role === "assistant" &&
+                messages[messages.length - 1]?.parts?.length === 0)) && (
+              <ThinkingMessage key="thinking" />
+            )}
           </AnimatePresence>
 
           <div
