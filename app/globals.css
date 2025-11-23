@@ -92,7 +92,8 @@
   /* var(--font-geist), */ --font-sans:
     "OPPO Sans 4.0", "PingFang SC", "Microsoft YaHei", "Microsoft YaHei UI",
     "WenQuanYi Micro Hei", sans-serif;
-  --font-mono: var(--font-geist-mono);
+  /*--font-mono: var(--font-geist-mono);*/
+  --font-mono: "OPPO Sans 4.0";
 
   --breakpoint-toast-mobile: 600px;
 
