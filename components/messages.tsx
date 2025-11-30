@@ -31,7 +31,6 @@ function PureMessages({
   setMessages,
   regenerate,
   isReadonly,
-  selectedModelId,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -101,8 +100,8 @@ function PureMessages({
           <AnimatePresence mode="wait">
             {(status === "submitted" ||
               (status === "streaming" &&
-                messages[messages.length - 1]?.role === "assistant" &&
-                messages[messages.length - 1]?.parts?.length === 0)) && (
+                messages.at(-1)?.role === "assistant" &&
+                messages.at(-1)?.parts?.length === 0)) && (
               <ThinkingMessage key="thinking" />
             )}
           </AnimatePresence>

@@ -25,6 +25,38 @@ import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import { Weather } from "./weather";
 
+const EXPLICIT_THINK_REGEX = /<think>([\s\S]*?)<\/think>/;
+const IMPLICIT_THINK_REGEX = /^([\s\S]*?)<\/think>/;
+const OPEN_THINK_REGEX = /^<think>([\s\S]*)$/;
+
+const processTextContent = (text: string) => {
+  // Check for explicit <think> tag first
+  const explicitMatch = text.match(EXPLICIT_THINK_REGEX);
+  if (explicitMatch) {
+    const reasoning = explicitMatch[1];
+    const content = text.replace(explicitMatch[0], "").trim();
+    return { reasoning, content };
+  }
+
+  // Check for implicit start (missing <think> but has </think>)
+  const implicitMatch = text.match(IMPLICIT_THINK_REGEX);
+  if (implicitMatch) {
+    const reasoning = implicitMatch[1];
+    const content = text.replace(implicitMatch[0], "").trim();
+    return { reasoning, content };
+  }
+
+  // Check for open <think> tag (streaming)
+  const openMatch = text.match(OPEN_THINK_REGEX);
+  if (openMatch) {
+    const reasoning = openMatch[1];
+    const content = text.replace(openMatch[0], "").trim();
+    return { reasoning, content };
+  }
+
+  return { reasoning: null, content: text };
+};
+
 const PurePreviewMessage = ({
   chatId,
   message,
@@ -121,25 +153,38 @@ const PurePreviewMessage = ({
             }
 
             if (type === "text") {
+              const { reasoning, content } =
+                message.role === "assistant"
+                  ? processTextContent(part.text)
+                  : { reasoning: null, content: part.text };
+
               if (mode === "view") {
                 return (
-                  <div key={key}>
-                    <MessageContent
-                      className={cn({
-                        "w-fit break-words rounded-2xl px-3 py-2 text-right text-white":
-                          message.role === "user",
-                        "bg-transparent px-0 py-0 text-left":
-                          message.role === "assistant",
-                      })}
-                      data-testid="message-content"
-                      style={
-                        message.role === "user"
-                          ? { backgroundColor: "#006cff" }
-                          : undefined
-                      }
-                    >
-                      <Response>{sanitizeText(part.text)}</Response>
-                    </MessageContent>
+                  <div className="flex flex-col gap-2" key={key}>
+                    {reasoning && (
+                      <MessageReasoning
+                        isLoading={isLoading}
+                        reasoning={reasoning}
+                      />
+                    )}
+                    {content && (
+                      <MessageContent
+                        className={cn({
+                          "w-fit break-words rounded-2xl px-3 py-2 text-right text-white":
+                            message.role === "user",
+                          "bg-transparent px-0 py-0 text-left":
+                            message.role === "assistant",
+                        })}
+                        data-testid="message-content"
+                        style={
+                          message.role === "user"
+                            ? { backgroundColor: "#006cff" }
+                            : undefined
+                        }
+                      >
+                        <Response>{sanitizeText(content)}</Response>
+                      </MessageContent>
+                    )}
                   </div>
                 );
               }
