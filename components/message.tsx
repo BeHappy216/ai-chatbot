@@ -1,7 +1,6 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
-import { motion } from "framer-motion";
 import { memo, useState } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
@@ -65,7 +64,7 @@ const PurePreviewMessage = ({
   setMessages,
   regenerate,
   isReadonly,
-  requiresScrollPadding,
+  requiresScrollPadding: _requiresScrollPadding,
 }: {
   chatId: string;
   message: ChatMessage;
@@ -85,12 +84,10 @@ const PurePreviewMessage = ({
   useDataStream();
 
   return (
-    <motion.div
-      animate={{ opacity: 1 }}
-      className="group/message w-full"
+    <div
+      className="group/message fade-in w-full animate-in duration-200"
       data-role={message.role}
       data-testid={`message-${message.role}`}
-      initial={{ opacity: 0 }}
     >
       <div
         className={cn("flex w-full items-start gap-2 md:gap-3", {
@@ -109,7 +106,6 @@ const PurePreviewMessage = ({
             "gap-2 md:gap-4": message.parts?.some(
               (p) => p.type === "text" && p.text?.trim()
             ),
-            "min-h-96": message.role === "assistant" && requiresScrollPadding,
             "w-full":
               (message.role === "assistant" &&
                 message.parts?.some(
@@ -327,7 +323,7 @@ const PurePreviewMessage = ({
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -355,27 +351,23 @@ export const PreviewMessage = memo(
 );
 
 export const ThinkingMessage = () => {
-  const role = "assistant";
-
   return (
-    <motion.div
-      animate={{ opacity: 1 }}
-      className="group/message w-full"
-      data-role={role}
+    <div
+      className="group/message fade-in w-full animate-in duration-300"
+      data-role="assistant"
       data-testid="message-assistant-loading"
-      exit={{ opacity: 0, transition: { duration: 0.5 } }}
-      initial={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
     >
       <div className="flex items-start justify-start gap-3">
         <div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
-          <SparklesIcon size={14} />
+          <div className="animate-pulse">
+            <SparklesIcon size={14} />
+          </div>
         </div>
 
         <div className="flex w-full flex-col gap-2 md:gap-4">
           <div className="p-0 text-muted-foreground text-sm">思考中...</div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
