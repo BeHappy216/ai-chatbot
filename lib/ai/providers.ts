@@ -23,6 +23,8 @@ const artifactModelClient = createOpenAICompatible({
   apiKey: process.env.ARTIFACT_MODEL_API_KEY || "",
 });
 
+const THINKING_SUFFIX_REGEX = /-thinking$/;
+
 export const myProvider = isTestEnvironment
   ? (() => {
       const {
@@ -42,18 +44,31 @@ export const myProvider = isTestEnvironment
     })()
   : customProvider({
       languageModels: {
-        ...(difyLanguageModel && { dify_nosystem: difyLanguageModel }),
-        "chat-model-2": chatModel2Client.chatModel(
+        ...(difyLanguageModel && { dify_nosystem: difyLanguageModel as any }),
+        "chat-model-2": chatModel2Client(
           process.env.CHAT_MODEL_2_NAME || "gpt-3.5-turbo"
-        ),
-        "chat-model-reasoning": chatModel2Client.chatModel(
+        ) as any,
+        "chat-model-reasoning": chatModel2Client(
           process.env.CHAT_MODEL_2_NAME || "gpt-4"
-        ),
-        "title-model": titleModelClient.chatModel(
+        ) as any,
+        "title-model": titleModelClient(
           process.env.TITLE_MODEL_NAME || "gpt-3.5-turbo"
-        ),
-        "artifact-model": artifactModelClient.chatModel(
+        ) as any,
+        "artifact-model": artifactModelClient(
           process.env.ARTIFACT_MODEL_NAME || "gpt-4"
-        ),
+        ) as any,
       },
     });
+
+export function getLanguageModel(modelId: string) {
+  // Always use myProvider for custom setup
+  return myProvider.languageModel(modelId);
+}
+
+export function getTitleModel() {
+  return myProvider.languageModel("title-model");
+}
+
+export function getArtifactModel() {
+  return myProvider.languageModel("artifact-model");
+}

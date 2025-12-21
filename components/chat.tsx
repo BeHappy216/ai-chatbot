@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
@@ -23,7 +23,6 @@ import { useChatVisibility } from "@/hooks/use-chat-visibility";
 import type { Vote } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
 import type { Attachment, ChatMessage } from "@/lib/types";
-import type { AppUsage } from "@/lib/usage";
 import { fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
 import { Artifact } from "./artifact";
 import { useDataStream } from "./data-stream-provider";
@@ -40,7 +39,6 @@ export function Chat({
   initialVisibilityType,
   isReadonly,
   autoResume,
-  initialLastContext,
 }: {
   id: string;
   initialMessages: ChatMessage[];
@@ -48,18 +46,29 @@ export function Chat({
   initialVisibilityType: VisibilityType;
   isReadonly: boolean;
   autoResume: boolean;
-  initialLastContext?: AppUsage;
 }) {
+  const router = useRouter();
+
   const { visibilityType } = useChatVisibility({
     chatId: id,
     initialVisibilityType,
   });
 
   const { mutate } = useSWRConfig();
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      // When user navigates back/forward, refresh to sync with URL
+      router.refresh();
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [router]);
   const { setDataStream } = useDataStream();
 
   const [input, setInput] = useState<string>("");
-  const [usage, setUsage] = useState<AppUsage | undefined>(initialLastContext);
   const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
   const [currentModelId, setCurrentModelId] = useState(initialChatModel);
   const currentModelIdRef = useRef(currentModelId);
@@ -76,19 +85,54 @@ export function Chat({
     stop,
     regenerate,
     resumeStream,
+    addToolApprovalResponse,
   } = useChat<ChatMessage>({
     id,
     messages: initialMessages,
     experimental_throttle: 100,
     generateId: generateUUID,
+    // Auto-continue after tool approval (only for APPROVED tools)
+    // Denied tools don't need server continuation - state is saved on next user message
+    sendAutomaticallyWhen: ({ messages: currentMessages }) => {
+      const lastMessage = currentMessages.at(-1);
+      // Only continue if a tool was APPROVED (not denied)
+      const shouldContinue =
+        lastMessage?.parts?.some(
+          (part) =>
+            "state" in part &&
+            part.state === "approval-responded" &&
+            "approval" in part &&
+            (part.approval as { approved?: boolean })?.approved === true
+        ) ?? false;
+      return shouldContinue;
+    },
     transport: new DefaultChatTransport({
       api: "/api/chat",
       fetch: fetchWithErrorHandlers,
       prepareSendMessagesRequest(request) {
+        const lastMessage = request.messages.at(-1);
+
+        // Check if this is a tool approval continuation:
+        // - Last message is NOT a user message (meaning no new user input)
+        // - OR any message has tool parts that were responded to (approved or denied)
+        const isToolApprovalContinuation =
+          lastMessage?.role !== "user" ||
+          request.messages.some((msg) =>
+            msg.parts?.some((part) => {
+              const state = (part as { state?: string }).state;
+              return (
+                state === "approval-responded" || state === "output-denied"
+              );
+            })
+          );
+
         return {
           body: {
             id: request.id,
-            message: request.messages.at(-1),
+            // Send all messages for tool approval continuation, otherwise just the last user message
+            ...(isToolApprovalContinuation
+              ? { messages: request.messages }
+              : { message: lastMessage }),
             selectedChatModel: currentModelIdRef.current,
             selectedVisibilityType: visibilityType,
             ...request.body,
@@ -98,9 +142,6 @@ export function Chat({
     }),
     onData: (dataPart) => {
       setDataStream((ds) => (ds ? [...ds, dataPart] : []));
-      if (dataPart.type === "data-usage") {
-        setUsage(dataPart.data);
-      }
     },
     onFinish: () => {
       mutate(unstable_serialize(getChatHistoryPaginationKey));
@@ -164,6 +205,7 @@ export function Chat({
         />
 
         <Messages
+          addToolApprovalResponse={addToolApprovalResponse}
           chatId={id}
           isArtifactVisible={isArtifactVisible}
           isReadonly={isReadonly}
@@ -191,13 +233,13 @@ export function Chat({
               setMessages={setMessages}
               status={status}
               stop={stop}
-              usage={usage}
             />
           )}
         </div>
       </div>
 
       <Artifact
+        addToolApprovalResponse={addToolApprovalResponse}
         attachments={attachments}
         chatId={id}
         input={input}

@@ -1,17 +1,16 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
-import { AnimatePresence } from "framer-motion";
 import { ArrowDownIcon } from "lucide-react";
-import { memo, useEffect } from "react";
+import { memo } from "react";
 import { useMessages } from "@/hooks/use-messages";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
 import { useDataStream } from "./data-stream-provider";
-import { Conversation, ConversationContent } from "./elements/conversation";
 import { Greeting } from "./greeting";
 import { PreviewMessage, ThinkingMessage } from "./message";
 
 type MessagesProps = {
+  addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
   chatId: string;
   status: UseChatHelpers<ChatMessage>["status"];
   votes: Vote[] | undefined;
@@ -24,6 +23,7 @@ type MessagesProps = {
 };
 
 function PureMessages({
+  addToolApprovalResponse,
   chatId,
   status,
   votes,
@@ -31,7 +31,7 @@ function PureMessages({
   setMessages,
   regenerate,
   isReadonly,
-  selectedModelId,
+  selectedModelId: _selectedModelId,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -45,32 +45,18 @@ function PureMessages({
 
   useDataStream();
 
-  useEffect(() => {
-    if (status === "submitted") {
-      requestAnimationFrame(() => {
-        const container = messagesContainerRef.current;
-        if (container) {
-          container.scrollTo({
-            top: container.scrollHeight,
-            behavior: "smooth",
-          });
-        }
-      });
-    }
-  }, [status, messagesContainerRef]);
-
   return (
-    <div
-      className="overscroll-behavior-contain -webkit-overflow-scrolling-touch flex-1 touch-pan-y overflow-y-scroll"
-      ref={messagesContainerRef}
-      style={{ overflowAnchor: "none" }}
-    >
-      <Conversation className="mx-auto flex min-w-0 max-w-4xl flex-col gap-4 md:gap-6">
-        <ConversationContent className="flex flex-col gap-4 px-2 py-4 md:gap-6 md:px-4">
+    <div className="relative flex-1">
+      <div
+        className="absolute inset-0 touch-pan-y overflow-y-auto"
+        ref={messagesContainerRef}
+      >
+        <div className="mx-auto flex min-w-0 max-w-4xl flex-col gap-4 px-2 py-4 md:gap-6 md:px-4">
           {messages.length === 0 && <Greeting />}
 
           {messages.map((message, index) => (
             <PreviewMessage
+              addToolApprovalResponse={addToolApprovalResponse}
               chatId={chatId}
               isLoading={
                 status === "streaming" && messages.length - 1 === index
@@ -91,27 +77,32 @@ function PureMessages({
             />
           ))}
 
-          <AnimatePresence mode="wait">
-            {status === "submitted" && <ThinkingMessage key="thinking" />}
-          </AnimatePresence>
+          {status === "submitted" &&
+            !messages.some((msg) =>
+              msg.parts?.some(
+                (part) => "state" in part && part.state === "approval-responded"
+              )
+            ) && <ThinkingMessage />}
 
           <div
             className="min-h-[24px] min-w-[24px] shrink-0"
             ref={messagesEndRef}
           />
-        </ConversationContent>
-      </Conversation>
+        </div>
+      </div>
 
-      {!isAtBottom && (
-        <button
-          aria-label="Scroll to bottom"
-          className="-translate-x-1/2 absolute bottom-40 left-1/2 z-10 rounded-full border bg-background p-2 shadow-lg transition-colors hover:bg-muted"
-          onClick={() => scrollToBottom("smooth")}
-          type="button"
-        >
-          <ArrowDownIcon className="size-4" />
-        </button>
-      )}
+      <button
+        aria-label="Scroll to bottom"
+        className={`-translate-x-1/2 absolute bottom-4 left-1/2 z-10 rounded-full border bg-background p-2 shadow-lg transition-all hover:bg-muted ${
+          isAtBottom
+            ? "pointer-events-none scale-0 opacity-0"
+            : "pointer-events-auto scale-100 opacity-100"
+        }`}
+        onClick={() => scrollToBottom("smooth")}
+        type="button"
+      >
+        <ArrowDownIcon className="size-4" />
+      </button>
     </div>
   );
 }

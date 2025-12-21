@@ -1,7 +1,6 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
 import equal from "fast-deep-equal";
-import { motion } from "framer-motion";
 import { memo, useState } from "react";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
@@ -25,7 +24,40 @@ import { MessageReasoning } from "./message-reasoning";
 import { PreviewAttachment } from "./preview-attachment";
 import { Weather } from "./weather";
 
+const EXPLICIT_THINK_REGEX = /<think>([\s\S]*?)<\/think>/;
+const IMPLICIT_THINK_REGEX = /^([\s\S]*?)<\/think>/;
+const OPEN_THINK_REGEX = /^<think>([\s\S]*)$/;
+
+const processTextContent = (text: string) => {
+  // Check for explicit <think> tag first
+  const explicitMatch = text.match(EXPLICIT_THINK_REGEX);
+  if (explicitMatch) {
+    const reasoning = explicitMatch[1];
+    const content = text.replace(explicitMatch[0], "").trim();
+    return { reasoning, content };
+  }
+
+  // Check for implicit start (missing <think> but has </think>)
+  const implicitMatch = text.match(IMPLICIT_THINK_REGEX);
+  if (implicitMatch) {
+    const reasoning = implicitMatch[1];
+    const content = text.replace(implicitMatch[0], "").trim();
+    return { reasoning, content };
+  }
+
+  // Check for open <think> tag (streaming)
+  const openMatch = text.match(OPEN_THINK_REGEX);
+  if (openMatch) {
+    const reasoning = openMatch[1];
+    const content = text.replace(openMatch[0], "").trim();
+    return { reasoning, content };
+  }
+
+  return { reasoning: null, content: text };
+};
+
 const PurePreviewMessage = ({
+  addToolApprovalResponse,
   chatId,
   message,
   vote,
@@ -33,8 +65,9 @@ const PurePreviewMessage = ({
   setMessages,
   regenerate,
   isReadonly,
-  requiresScrollPadding,
+  requiresScrollPadding: _requiresScrollPadding,
 }: {
+  addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
   chatId: string;
   message: ChatMessage;
   vote: Vote | undefined;
@@ -53,12 +86,10 @@ const PurePreviewMessage = ({
   useDataStream();
 
   return (
-    <motion.div
-      animate={{ opacity: 1 }}
-      className="group/message w-full"
+    <div
+      className="group/message fade-in w-full animate-in duration-200"
       data-role={message.role}
       data-testid={`message-${message.role}`}
-      initial={{ opacity: 0 }}
     >
       <div
         className={cn("flex w-full items-start gap-2 md:gap-3", {
@@ -77,12 +108,12 @@ const PurePreviewMessage = ({
             "gap-2 md:gap-4": message.parts?.some(
               (p) => p.type === "text" && p.text?.trim()
             ),
-            "min-h-96": message.role === "assistant" && requiresScrollPadding,
             "w-full":
               (message.role === "assistant" &&
-                message.parts?.some(
+                (message.parts?.some(
                   (p) => p.type === "text" && p.text?.trim()
-                )) ||
+                ) ||
+                  message.parts?.some((p) => p.type.startsWith("tool-")))) ||
               mode === "edit",
             "max-w-[calc(100%-2.5rem)] sm:max-w-[min(fit-content,80%)]":
               message.role === "user" && mode !== "edit",
@@ -121,25 +152,38 @@ const PurePreviewMessage = ({
             }
 
             if (type === "text") {
+              const { reasoning, content } =
+                message.role === "assistant"
+                  ? processTextContent(part.text)
+                  : { reasoning: null, content: part.text };
+
               if (mode === "view") {
                 return (
-                  <div key={key}>
-                    <MessageContent
-                      className={cn({
-                        "w-fit break-words rounded-2xl px-3 py-2 text-right text-white":
-                          message.role === "user",
-                        "bg-transparent px-0 py-0 text-left":
-                          message.role === "assistant",
-                      })}
-                      data-testid="message-content"
-                      style={
-                        message.role === "user"
-                          ? { backgroundColor: "#006cff" }
-                          : undefined
-                      }
-                    >
-                      <Response>{sanitizeText(part.text)}</Response>
-                    </MessageContent>
+                  <div className="flex flex-col gap-2" key={key}>
+                    {reasoning && (
+                      <MessageReasoning
+                        isLoading={isLoading}
+                        reasoning={reasoning}
+                      />
+                    )}
+                    {content && (
+                      <MessageContent
+                        className={cn({
+                          "w-fit break-words rounded-2xl px-3 py-2 text-right text-white":
+                            message.role === "user",
+                          "bg-transparent px-0 py-0 text-left":
+                            message.role === "assistant",
+                        })}
+                        data-testid="message-content"
+                        style={
+                          message.role === "user"
+                            ? { backgroundColor: "#006cff" }
+                            : undefined
+                        }
+                      >
+                        <Response>{sanitizeText(content)}</Response>
+                      </MessageContent>
+                    )}
                   </div>
                 );
               }
@@ -167,22 +211,95 @@ const PurePreviewMessage = ({
 
             if (type === "tool-getWeather") {
               const { toolCallId, state } = part;
+              const approvalId = (part as { approval?: { id: string } })
+                .approval?.id;
+              const isDenied =
+                state === "output-denied" ||
+                (state === "approval-responded" &&
+                  (part as { approval?: { approved?: boolean } }).approval
+                    ?.approved === false);
+              const widthClass = "w-[min(100%,450px)]";
+
+              if (state === "output-available") {
+                return (
+                  <div className={widthClass} key={toolCallId}>
+                    <Weather weatherAtLocation={part.output} />
+                  </div>
+                );
+              }
+
+              if (isDenied) {
+                return (
+                  <div className={widthClass} key={toolCallId}>
+                    <Tool className="w-full" defaultOpen={true}>
+                      <ToolHeader
+                        state="output-denied"
+                        type="tool-getWeather"
+                      />
+                      <ToolContent>
+                        <div className="px-4 py-3 text-muted-foreground text-sm">
+                          Weather lookup was denied.
+                        </div>
+                      </ToolContent>
+                    </Tool>
+                  </div>
+                );
+              }
+
+              if (state === "approval-responded") {
+                return (
+                  <div className={widthClass} key={toolCallId}>
+                    <Tool className="w-full" defaultOpen={true}>
+                      <ToolHeader state={state} type="tool-getWeather" />
+                      <ToolContent>
+                        <ToolInput input={part.input} />
+                      </ToolContent>
+                    </Tool>
+                  </div>
+                );
+              }
 
               return (
-                <Tool defaultOpen={true} key={toolCallId}>
-                  <ToolHeader state={state} type="tool-getWeather" />
-                  <ToolContent>
-                    {state === "input-available" && (
-                      <ToolInput input={part.input} />
-                    )}
-                    {state === "output-available" && (
-                      <ToolOutput
-                        errorText={undefined}
-                        output={<Weather weatherAtLocation={part.output} />}
-                      />
-                    )}
-                  </ToolContent>
-                </Tool>
+                <div className={widthClass} key={toolCallId}>
+                  <Tool className="w-full" defaultOpen={true}>
+                    <ToolHeader state={state} type="tool-getWeather" />
+                    <ToolContent>
+                      {(state === "input-available" ||
+                        state === "approval-requested") && (
+                        <ToolInput input={part.input} />
+                      )}
+                      {state === "approval-requested" && approvalId && (
+                        <div className="flex items-center justify-end gap-2 border-t px-4 py-3">
+                          <button
+                            className="rounded-md px-3 py-1.5 text-muted-foreground text-sm transition-colors hover:bg-muted hover:text-foreground"
+                            onClick={() => {
+                              addToolApprovalResponse({
+                                id: approvalId,
+                                approved: false,
+                                reason: "User denied weather lookup",
+                              });
+                            }}
+                            type="button"
+                          >
+                            Deny
+                          </button>
+                          <button
+                            className="rounded-md bg-primary px-3 py-1.5 text-primary-foreground text-sm transition-colors hover:bg-primary/90"
+                            onClick={() => {
+                              addToolApprovalResponse({
+                                id: approvalId,
+                                approved: true,
+                              });
+                            }}
+                            type="button"
+                          >
+                            Allow
+                          </button>
+                        </div>
+                      )}
+                    </ToolContent>
+                  </Tool>
+                </div>
               );
             }
 
@@ -282,55 +399,44 @@ const PurePreviewMessage = ({
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
 export const PreviewMessage = memo(
   PurePreviewMessage,
   (prevProps, nextProps) => {
-    if (prevProps.isLoading !== nextProps.isLoading) {
-      return false;
+    if (
+      prevProps.isLoading === nextProps.isLoading &&
+      prevProps.message.id === nextProps.message.id &&
+      prevProps.requiresScrollPadding === nextProps.requiresScrollPadding &&
+      equal(prevProps.message.parts, nextProps.message.parts) &&
+      equal(prevProps.vote, nextProps.vote)
+    ) {
+      return true;
     }
-    if (prevProps.message.id !== nextProps.message.id) {
-      return false;
-    }
-    if (prevProps.requiresScrollPadding !== nextProps.requiresScrollPadding) {
-      return false;
-    }
-    if (!equal(prevProps.message.parts, nextProps.message.parts)) {
-      return false;
-    }
-    if (!equal(prevProps.vote, nextProps.vote)) {
-      return false;
-    }
-
     return false;
   }
 );
 
 export const ThinkingMessage = () => {
-  const role = "assistant";
-
   return (
-    <motion.div
-      animate={{ opacity: 1 }}
-      className="group/message w-full"
-      data-role={role}
+    <div
+      className="group/message fade-in w-full animate-in duration-300"
+      data-role="assistant"
       data-testid="message-assistant-loading"
-      exit={{ opacity: 0, transition: { duration: 0.5 } }}
-      initial={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
     >
       <div className="flex items-start justify-start gap-3">
         <div className="-mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border">
-          <SparklesIcon size={14} />
+          <div className="animate-pulse">
+            <SparklesIcon size={14} />
+          </div>
         </div>
 
         <div className="flex w-full flex-col gap-2 md:gap-4">
           <div className="p-0 text-muted-foreground text-sm">思考中...</div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
