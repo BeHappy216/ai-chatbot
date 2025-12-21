@@ -11,7 +11,27 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import type { AppUsage } from "../usage";
+
+export type AppUsage = {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  inputTokens?: number;
+  outpuTokens?: number;
+  reasoningTokens?: number;
+  cachedInputTokens?: number;
+  costUSD?: {
+    totalUSD?: number;
+    inputUSD?: number;
+    outputUSD?: number;
+    reasoningUSD?: number;
+    cacheReadUSD?: number;
+  };
+  // biome-ignore lint/suspicious/noExplicitAny: generic context property
+  context?: any;
+  // biome-ignore lint/suspicious/noExplicitAny: allow flexible usage
+  [key: string]: any;
+};
 
 export const user = pgTable("User", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),

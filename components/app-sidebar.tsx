@@ -49,8 +49,9 @@ export function AppSidebar({ user }: { user: User | undefined }) {
       loading: "Deleting all chats...",
       success: () => {
         mutate(unstable_serialize(getChatHistoryPaginationKey));
-        router.push("/");
         setShowDeleteAllDialog(false);
+        router.replace("/");
+        router.refresh();
         return "所有对话已成功删除";
       },
       error: "删除所有对话失败",

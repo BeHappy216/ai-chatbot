@@ -10,6 +10,7 @@ import { Greeting } from "./greeting";
 import { PreviewMessage, ThinkingMessage } from "./message";
 
 type MessagesProps = {
+  addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];
   chatId: string;
   status: UseChatHelpers<ChatMessage>["status"];
   votes: Vote[] | undefined;
@@ -22,6 +23,7 @@ type MessagesProps = {
 };
 
 function PureMessages({
+  addToolApprovalResponse,
   chatId,
   status,
   votes,
@@ -52,36 +54,35 @@ function PureMessages({
         <div className="mx-auto flex min-w-0 max-w-4xl flex-col gap-4 px-2 py-4 md:gap-6 md:px-4">
           {messages.length === 0 && <Greeting />}
 
-          {messages.map((message, index) => {
-            const isLast = index === messages.length - 1;
-            const isStreaming = status === "streaming";
-            const isAssistant = message.role === "assistant";
-            const isEmpty = message.parts?.length === 0;
+          {messages.map((message, index) => (
+            <PreviewMessage
+              addToolApprovalResponse={addToolApprovalResponse}
+              chatId={chatId}
+              isLoading={
+                status === "streaming" && messages.length - 1 === index
+              }
+              isReadonly={isReadonly}
+              key={message.id}
+              message={message}
+              regenerate={regenerate}
+              requiresScrollPadding={
+                hasSentMessage && index === messages.length - 1
+              }
+              setMessages={setMessages}
+              vote={
+                votes
+                  ? votes.find((vote) => vote.messageId === message.id)
+                  : undefined
+              }
+            />
+          ))}
 
-            if (isStreaming && isLast && isAssistant && isEmpty) {
-              return null;
-            }
-
-            return (
-              <PreviewMessage
-                chatId={chatId}
-                isLoading={isStreaming && isLast}
-                isReadonly={isReadonly}
-                key={message.id}
-                message={message}
-                regenerate={regenerate}
-                requiresScrollPadding={hasSentMessage && isLast}
-                setMessages={setMessages}
-                vote={
-                  votes
-                    ? votes.find((vote) => vote.messageId === message.id)
-                    : undefined
-                }
-              />
-            );
-          })}
-
-          {status === "submitted" && <ThinkingMessage />}
+          {status === "submitted" &&
+            !messages.some((msg) =>
+              msg.parts?.some(
+                (part) => "state" in part && part.state === "approval-responded"
+              )
+            ) && <ThinkingMessage />}
 
           <div
             className="min-h-[24px] min-w-[24px] shrink-0"
